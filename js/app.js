@@ -37,12 +37,12 @@
         skip_bot = {
           name: "Skip Bot",
           language: 'js',
-          code: "function play_game(board,side) {\n  if(board.indexOf('___') > -1) {\n    return board.replace('___','__'+side);\n  } else {\n    return board.replace('_',side);\n  }\n}"
+          code: "function play_game(board,side) {\n  if(board.indexOf('_______') > -1) {\n    return board.replace('_______','______'+side);\n  } else {\n    return board.replace('_',side);\n  }\n}"
         };
         bad_bot = {
           name: "Bad Bot",
           language: 'js',
-          code: "function play_game(board,side) {\n  return '___,___,___';\n}"
+          code: "function play_game(board,side) {\n  return '_______,_______,_______,_______,_______,_______,_______';\n}"
         };
         
         $scope.add_bot = function() {
@@ -57,21 +57,12 @@
         //Some example code for each language.
         $scope.d = {
           "js": {
-            "solution": "function play_game(board,side) {\n  return '_________';\n}",
-            "tests": "assert_equal('ANYTHING',play_game('_________','X'))"
+            "solution": "function play_game(board,side) {\n  return board.replace('_',side);\n}",
+            "tests": "assert_equal('ANYTHING',play_game('_______,_______,_______,_______,_______,_______,_______','X'))"
           },
           "python": {
-            "solution": "def play_game(board,side):\n  return '_________'",
-            "tests": ">>> play_game('___,___,___','X')\n  'ANYTHING'\n"
-          },
-          "java": {
-            "solution": "int a = 2;\nint b = 5;\nint c=a+1;\na=8+b-c;",
-            "tests": "assertEquals(10,a);\nassertEquals(3,c)"
-          },
-          "ruby": {
-            "solution": "a = 1\nb = 2",
-            "tests": "assert_equal(1,a)\nassert_equal(2,b)",
-            "hosts": ["parserplayground-staging.appspot.com/ruby?id=1", "parserplayground-staging.appspot.com/ruby?id=2"]
+            "solution": "def play_game(board,side):\n  return board.replace('_',side,1)\n",
+            "tests": ">>> play_game('_______,_______,_______,_______,_______,_______,_______','X')\n  'ANYTHING'\n"
           }
         }
 
@@ -106,49 +97,86 @@
           $scope.bot2 = bot;
           $scope.solution = bot.code;
         };
-        $scope.is_move_valid = function(board, move) {
-          if (move.split("_").length - 1 < board.split("_").length - 1) {
-            console.log("returning true. board " + board.indexOf('_') + " move " + move.indexOf('_'));
+        
+        $scope.is_move_valid = function(board, newBroad) {
+          if (checkValidMove(board, newBroad)) {
+            console.log("returning true. board " + board.indexOf('_') + " move " + newBroad.indexOf('_'));
             return true;
           } else {
             console.log("returning false");
             return false;
           }
-
         };
+        
+        function checkValidMove(board, newBoard) {
+          if(newBoard.length !== 55 || !/[_XO]+/.test(newBoard.split(',').join())){
+            return false;
+          }
+          else {
+            var totalDiff = 0;
+            for(var i=0;i<55;i++) {
+              if(newBoard[i] != board[i]){
+                if((board[i] == '_') && (newBoard[i] != '_')){
+                  totalDiff++;
+                }
+                else {
+                  return false;
+                }
+              }
+            }
+  
+            if(totalDiff == 1){
+              return true;
+            }
+            else {
+              return false;
+            }
+          }
+        }
+
         $scope.game_status = function(board) {
-          //Only 8 ways to win and check for. 
-          for (var i = 0; i < 3; i++) {
-            //vertical down moving across
-            console.log(i);
-            if (board[0 + i] == 'X' && board[0 + i] == board[4 + i] && board[4 + i] == board[8 + i]) {
-              return {
-                finished: true,
-                winner: 'X'
-              };
+          for (var i = 0; i < 7; i++) {
+            for(var j = 0; j < 3; j++) { 
+              if (board[8*j+i] != '_' && board[8*j+i] == board[8*(j+1)+i] && board[8*(j+1)+i] == board[8*(j+2)+i] && board[8*(j+2)+i] == board[8*(j+3)+i] && board[8*(j+3)+i] == board[8*(j+4)+i]) {
+                return {
+                  finished: true,
+                  winner: board[8*j+i]
+                };
+              }  
             }
-            //horizontal across moving down
-            if (board[0 + 4 * i] == 'X' && board[0 + 4 * i] == board[1 + 4 * i] && board[1 + 4 * i] == board[2 + 4 * i]) {
-              return {
-                finished: true,
-                winner: 'X'
-              };
+            
+            for(var j = 0; j < 3; j++) {
+              if (board[8*i+j] != '_' && board[8*i+j] == board[8*i+j+1] && board[8*i+j+1] == board[8*i+j+2] && board[8*i+j+2] == board[8*i+j+3] && board[8*i+j+3] == board[8*i+j+4]) {
+                return {
+                  finished: true,
+                  winner: board[8*i+j]
+                };
+              }  
             }
           }
-          //diagonals
-          if (board[0] == 'X' && board[0] == board[5] && board[5] == board[10]) {
-            return {
-              finished: true,
-              winner: 'X'
-            };
-          } else if (board[2] == 'X' && board[2] == board[5] && board[5] == board[8]) {
-            return {
-              finished: true,
-              winner: 'X'
-            };
+          
+          for(var i = 0; i < 3; i++) {
+            for(var j = 0; j < 3; j++) {
+              if (board[8*j+i] != '_' && board[8*j+i] == board[8*(j+1)+i+1] && board[8*(j+1)+i+1] == board[8*(j+2)+i+2] && board[8*(j+2)+i+2] == board[8*(j+3)+i+3] && board[8*(j+3)+i+3] == board[8*(j+4)+i+4]) {
+                return {
+                  finished: true,
+                  winner: board[8*j+i]
+                };
+              }     
+            }
+            
+            for(var j = 4; j < 7; j++) {
+              if (board[8*j+i] != '_' && board[8*j+i] == board[8*(j-1)+i+1] && board[8*(j-1)+i+1] == board[8*(j-2)+i+2] && board[8*(j-2)+i+2] == board[8*(j-3)+i+3] && board[8*(j-3)+i+3] == board[8*(j-4)+i+4]) {
+                return {
+                  finished: true,
+                  winner: board[8*j+i]
+                };
+              } 
+            }
           }
+          
           //Full board
-          else if (board.indexOf('_') === -1) {
+          if (board.indexOf('_') === -1) {
             return {
               finished: true,
               winner: 'Tie'
@@ -161,15 +189,12 @@
 
         };
 
-
         $scope.reset_game = function() {
-          $scope.current_board = "___,___,___";
+          $scope.current_board = "_______,_______,_______,_______,_______,_______,_______";
           $scope.game_history = [];
-
         };
 
         $scope.reset_game();
-
 
         $scope.play_game = function(playerX, playerO) {
 
@@ -206,9 +231,13 @@
             console.log("the new board " + new_board);
             $scope.game_history.push(new_board);
             //Check of board is valid
+            
             if (!$scope.is_move_valid($scope.current_board, new_board)) {
+              current_player = (numX % 2 === 1)?'X':'O';
+              $scope.winner = "Invalid play by Bot " + current_player + " detected in last play!!!";
               return false;
             }
+            
             $scope.current_board = new_board;
             
             //Check if the game is over and who won. 
